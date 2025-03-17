@@ -1,3 +1,4 @@
+#version 2
 import os
 import re
 
@@ -32,3 +33,5 @@ with open("cleaned_books.tsv", "w", encoding="utf-8") as f:
         f.write(f"{book_id}\t{text}\n")
 
 print("Processed books saved to cleaned_books.tsv")
+ 
+ 
