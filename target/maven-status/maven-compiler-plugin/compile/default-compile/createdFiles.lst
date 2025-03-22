@@ -1,3 +1,6 @@
+com/example/WordFrequencyDriver.class
+com/example/WordFrequencyMapper.class
 com/example/PreprocessingMapper.class
+com/example/WordFrequencyReducer.class
 com/example/PreprocessingDriver.class
 com/example/PreprocessingReducer.class
