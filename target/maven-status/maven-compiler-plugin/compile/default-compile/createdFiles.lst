@@ -1,5 +1,8 @@
 com/example/WordFrequencyDriver.class
 com/example/WordFrequencyMapper.class
+com/example/SentimentDriver.class
+com/example/SentimentMapper.class
+com/example/SentimentReducer.class
 com/example/PreprocessingMapper.class
 com/example/WordFrequencyReducer.class
 com/example/PreprocessingDriver.class
