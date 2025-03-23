@@ -1,23 +1,29 @@
 import pandas as pd
 
-# Load metadata and cleaned text
-metadata = pd.read_csv('gutenberg_metadata.csv')  # Contains book_id, title, author, year, download_link
-cleaned = pd.read_csv('cleaned_books.tsv', sep="\t", names=["book_id", "cleaned_text"])
-
-# Clean book_id to ensure consistent types
+# Load Metadata
+metadata = pd.read_csv("gutenberg_metadata.csv")
 metadata["book_id"] = metadata["book_id"].astype(str)
-cleaned["book_id"] = cleaned["book_id"].astype(str)
 
-# Merge on book_id
-merged = pd.merge(metadata, cleaned, on="book_id", how="inner")
+# Load Cleaned Text
+cleaned_text = pd.read_csv("cleaned_books.tsv", sep="\t", names=["book_id", "cleaned_text"])
+cleaned_text["book_id"] = cleaned_text["book_id"].astype(str)
 
-# Keep only required columns
-final_df = merged[["book_id", "title", "year", "cleaned_text"]]
+# Debug: Check how many book IDs match
+print("📌 Total books in metadata:", len(metadata["book_id"].unique()))
+print("📌 Total books in cleaned text:", len(cleaned_text["book_id"].unique()))
+print("📌 Matching books:", len(set(metadata["book_id"]).intersection(set(cleaned_text["book_id"]))))
 
-# Save final cleaned CSV
-final_df.to_csv("final_cleaned_books.csv", index=False)
+# Merge using 'outer' to retain all books
+merged = metadata.merge(cleaned_text, on="book_id", how="outer")
 
-print("✅ Final cleaned dataset saved as 'final_cleaned_books.csv'")
-print(f"✅ Total books in final dataset: {len(final_df)}")
+# Drop books that don’t have processed text (optional)
+merged = merged.dropna(subset=["cleaned_text"])
 
+# ✅ Fix: Include cleaned_text in output
+final_output = merged[["book_id", "title", "year", "cleaned_text"]]
+
+# Save final cleaned dataset
+final_output.to_csv("final_cleaned_books.csv", index=False)
+
+print("✅ Final cleaned dataset saved! Books in final dataset:", len(final_output))
 
