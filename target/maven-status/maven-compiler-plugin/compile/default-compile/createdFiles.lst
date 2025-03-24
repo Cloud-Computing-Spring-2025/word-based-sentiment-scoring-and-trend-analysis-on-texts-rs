@@ -1,8 +1,7 @@
 com/example/task_2/WordFrequencyReducer.class
-com/example/TrendAnalysisReducer.class
-com/example/TrendAnalysisMapper.class
+com/hadoop/analysis/TrendAnalysisMapper.class
+com/hadoop/analysis/TrendAnalysisDriver.class
 com/example/task_3/SentimentReducer.class
-com/example/TrendAnalysisDriver.class
 com/example/task_2/WordFrequencyMapper.class
 com/example/task_2/WordFrequencyDriver.class
 com/example/PreprocessingMapper.class
@@ -10,3 +9,4 @@ com/example/PreprocessingDriver.class
 com/example/PreprocessingReducer.class
 com/example/task_3/SentimentMapper.class
 com/example/task_3/SentimentDriver.class
+com/hadoop/analysis/TrendAnalysisReducer.class
