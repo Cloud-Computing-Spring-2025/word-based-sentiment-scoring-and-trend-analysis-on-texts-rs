@@ -31,14 +31,14 @@ Each book has the following metadata:
 - `author`: Author of the book  
 - `year`: Birth year of the author (used as a proxy for publication year)
 
-📁 **Books and metadata saved as:**
+**Books and metadata saved as:**
 
 - `gutenberg_books/` — Folder with raw `.txt` books  
 - `gutenberg_metadata.csv` — Metadata CSV file
 
 ---
 
-## ⚙️ Implementation Notes
+##  Implementation Notes
 
 - **Scope**: Implemented using Hadoop MapReduce (Java)
 - **Initial Preprocessing**: Done in Python before MapReduce
@@ -48,11 +48,11 @@ Each book has the following metadata:
   - Metadata → `gutenberg_metadata.csv`
   - Final Output → `final_cleaned_books.csv`
 
----
 
-## 🛠 Implementation Steps
 
-### 🐍 1. Python Preprocessing (`formatBooks.py`)
+##  Implementation Steps
+
+###  1. Python Preprocessing (`formatBooks.py`)
 
 - Extracts `book_id` from filenames like `book_1342.txt` → `1342`
 - Lowercases text  
@@ -158,7 +158,7 @@ book_id,title,year,cleaned_text
 ##  Contributors
 
 - `@ramisha99`
-- Collaborators: _[Add your teammates here]_
+  
 
 
 
