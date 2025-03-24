@@ -1,2 +1,4 @@
 jar_file/task_2_jar/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar
 jar_file/task_2_jar/original-sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar
+target/
+jar_file/
