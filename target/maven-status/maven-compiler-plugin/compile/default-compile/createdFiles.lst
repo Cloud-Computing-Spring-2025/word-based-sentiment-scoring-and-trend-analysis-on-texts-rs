@@ -1,9 +1,12 @@
-com/example/WordFrequencyDriver.class
-com/example/WordFrequencyMapper.class
+com/example/task_2/WordFrequencyReducer.class
 com/example/SentimentDriver.class
 com/example/SentimentMapper.class
+com/example/TrendAnalysisReducer.class
+com/example/TrendAnalysisMapper.class
+com/example/TrendAnalysisDriver.class
 com/example/SentimentReducer.class
+com/example/task_2/WordFrequencyMapper.class
+com/example/task_2/WordFrequencyDriver.class
 com/example/PreprocessingMapper.class
-com/example/WordFrequencyReducer.class
 com/example/PreprocessingDriver.class
 com/example/PreprocessingReducer.class

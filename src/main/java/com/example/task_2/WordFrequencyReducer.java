@@ -1,4 +1,4 @@
-package com.example;
+package com.example.task_2;
 
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.*;

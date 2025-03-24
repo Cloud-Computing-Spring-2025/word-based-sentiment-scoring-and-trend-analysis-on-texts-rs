@@ -1,4 +1,4 @@
-package com.example;
+package com.example.task_2;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
