@@ -1,0 +1,39 @@
+-- load and format Task 2 output
+DROP TABLE IF EXISTS lemma_freqs_raw;
+CREATE EXTERNAL TABLE lemma_freqs_raw (raw_line STRING)
+LOCATION 'outputs/task_2_output';
+
+DROP TABLE IF EXISTS lemma_freqs;
+CREATE TABLE lemma_freqs AS
+SELECT
+  CAST(split(raw_line, ',')[0] AS INT) AS book_id,
+  split(raw_line, ',')[1] AS lemma,
+  CAST(split(split(raw_line, ',')[2], '\t')[0] AS INT) AS year,
+  CAST(split(split(raw_line, ',')[2], '\t')[1] AS INT) AS freq
+FROM lemma_freqs_raw;
+
+ADD JAR jar_file/bigram-udf.jar;
+CREATE TEMPORARY FUNCTION pseudo_bigrams AS 'com.example.udf.BigramUDF';
+
+-- Run bigram analysis
+DROP TABLE IF EXISTS bigram_output;
+CREATE TABLE bigram_output AS
+SELECT 
+  book_id,
+  year,
+  bigram_freq.key AS bigram,
+  bigram_freq.value AS co_freq
+FROM (
+  SELECT 
+    book_id,
+    year,
+    explode(pseudo_bigrams(collect_list(concat_ws(":", lemma, freq)))) AS bigram_freq
+  FROM lemma_freqs
+  GROUP BY book_id, year
+) exploded;
+
+-- export 
+INSERT OVERWRITE DIRECTORY 'outputs/task5_output'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT * FROM bigram_output;
