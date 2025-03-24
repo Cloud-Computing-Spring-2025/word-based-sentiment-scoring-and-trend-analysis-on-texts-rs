@@ -186,4 +186,91 @@ hdfs dfs -get /output/part-r-00000 output_local.txt
 python merge_metadata.py
 ```
 
+# task 4 step by step guide 
+
+
+## Prerequisites
+- Docker
+- Maven
+- Hadoop 2.7.4 (inside Docker container)
+
+## Steps to Run the Analysis
+
+### 1. Start Docker Containers
+Run the following command to start the necessary containers:
+```sh
+docker compose up -d
+```
+
+### 2. Build the JAR File
+Navigate to the project directory and use Maven to build the JAR file:
+```sh
+mvn install
+```
+
+### 3. Copy the JAR File to Hadoop
+Copy the compiled JAR file to the Hadoop directory inside the Docker container:
+```sh
+docker cp target/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/
+```
+
+### 4. Move Dataset Outputs to Hadoop
+Copy the dataset outputs from previous tasks into the Hadoop directory:
+```sh
+docker cp outputs/task_2_output/output2 resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/
+docker cp outputs/task3_output/output_3/output3 resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/
+```
+
+### 5. Connect to Docker Container
+Access the Hadoop resourcemanager container:
+```sh
+docker exec -it resourcemanager /bin/bash
+```
+
+### 6. Navigate to Hadoop Directory
+```sh
+cd /opt/hadoop-2.7.4/share/hadoop/mapreduce/
+```
+
+### 7. Resolve SLF4J Dependency Issues (If Any)
+If you encounter multiple SLF4J bindings, locate and remove duplicate files:
+```sh
+find /opt/hadoop-2.7.4/share/hadoop -name "slf4j*.jar"
+```
+
+### 8. Prepare Input Directory in HDFS
+Create the input directory in Hadoop File System:
+```sh
+hadoop fs -mkdir -p /input/dataset
+```
+Copy the dataset files into the input directory:
+```sh
+hadoop fs -put ./output2 /input4
+hadoop fs -put ./output3 /input4
+```
+
+### 9. Execute Hadoop Job
+Run the Hadoop MapReduce job with the input data:
+```sh
+hadoop jar /opt/hadoop-2.7.4/share/hadoop/mapreduce/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar com.hadoop.analysis.TrendAnalysisDriver /input4 /t4output
+```
+
+### 10. View the Output
+Check the results in HDFS:
+```sh
+hadoop fs -cat /t4output/*
+```
+Retrieve the output files to the local Hadoop directory:
+```sh
+hdfs dfs -get /t4output /opt/hadoop-2.7.4/share/hadoop/mapreduce/
+exit
+```
+
+### 11. Copy Output Files to Local Machine
+Copy the output files from the container to the local workspace:
+```sh
+docker cp resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/t4output/ outputs/task4_output
+```
+
+
 
