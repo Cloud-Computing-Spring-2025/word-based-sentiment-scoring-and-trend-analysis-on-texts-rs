@@ -186,8 +186,8 @@ hdfs dfs -get /output/part-r-00000 output_local.txt
 python merge_metadata.py
 ```
 
-## task 4 step by step guide 
-# Sentiment Scoring Trend Analysis - README
+# task 4 step by step guide 
+
 
 ## Prerequisites
 - Docker
