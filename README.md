@@ -185,6 +185,267 @@ hadoop jar target/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar com.exampl
 hdfs dfs -get /output/part-r-00000 output_local.txt
 python merge_metadata.py
 ```
+# Task 2: Word Frequency Analysis with Lemmatization (MapReduce Job)
+
+## Objective
+The objective of Task 2 is to compute the word frequency of lemmatized words for each book while preserving the publication year. Lemmatization ensures different word forms (e.g., "running" → "run") are treated as the same word to improve accuracy in trend analysis.
+
+## Dataset Overview
+The dataset for Task 2: Word Frequency Analysis with Lemmatization is derived from the cleaned book texts in `final_cleaned_books.csv`, processed in Task 1. It contains:
+- `book_id` – Unique identifier for each book
+- `title` – Book title
+- `year` – Year of publication
+- `cleaned_text` – Preprocessed text  
+
+This task extracts lemmatized word frequencies while retaining metadata for trend and sentiment analysis.
+
+## Implementation Notes
+- **Scope:** Implemented using Hadoop MapReduce (Java) with Stanford NLP for lemmatization.
+- **Preprocessing Method:** Utilized Stanford CoreNLP for tokenization, part-of-speech tagging, and lemmatization.
+- **File Formats:**  
+  - **Input:** `final_cleaned_books.csv` (book metadata + cleaned text)  
+  - **Output:** Lemmatized word counts.
+
+## Implementation Steps
+
+### 1. Upload Input Data to HDFS
+```sh
+hadoop fs -mkdir -p /input/task2
+hadoop fs -put ./task_1_output/ /input/task2
+```
+
+### 2. Run the MapReduce Job
+#### Mapper: `WordFrequencyMapper.java`
+- Reads each line from `final_cleaned_books.csv`
+- Extracts `book_id`, `year`, and `cleaned_text`
+- Uses Stanford CoreNLP for tokenization and lemmatization
+- Emits: `<book_id, lemma, year> → 1` (word frequency count per book)
+
+#### Reducer: `WordFrequencyReducer.java`
+- Aggregates word counts per `book_id`, `lemma`, and `year`
+- Emits: `book_id, lemma, year frequency`
+
+#### Driver: `WordFrequencyDriver.java`
+- Sets up the MapReduce job and specifies input/output paths
+
+Run the MapReduce job with:
+```sh
+hadoop jar sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar com.example.task_2.WordFrequencyDriver /task_1_output/ /output_2
+```
+
+### 3. Retrieve the Output
+```sh
+hadoop fs -cat /output_2/*
+```
+
+### Final Output Format
+Each line in `/output_2` contains:
+```
+book_id,lemma,year frequency
+```
+#### Sample Output:
+```
+1080,90,1667	2
+1080,American,1667	2
+1080,English,1667	1
+1080,French,1667	1
+1080,I,1667	60
+1080,Protestant,1667	1
+```
+
+## Challenges Encountered
+- Processing large text datasets efficiently with Stanford NLP in Java MapReduce.
+- Handling punctuation and non-word tokens during lemmatization.
+- Ensuring HDFS-friendly output formats for future tasks.
+
+## Insights
+- Lemmatization helps standardize words, improving accuracy in trend analysis.
+- Efficient text processing ensures better scalability for large corpora.
+- Structured output makes downstream tasks (e.g., sentiment analysis) easier.
+
+## Contributors
+**Bhanu Saisree Thanniru**
+
+---
+
+## How to Run (Quick Start)
+
+### Setup and Execution
+
+#### 1. Start the Hadoop Cluster
+```sh
+docker compose up -d
+```
+
+#### 2. Build the Code
+```sh
+mvn install
+```
+
+#### 3. Move JAR File to Shared Folder
+```sh
+mv target/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar jar_file/task_2
+```
+
+#### 4. Copy JAR to Docker Container
+```sh
+docker cp /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-rs/jar_file/task_2/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/
+```
+
+#### 5. Move Dataset to Docker Container
+```sh
+docker cp /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-rs/outputs/task_1_output/ resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/
+```
+
+#### 6. Connect to Docker Container
+```sh
+docker exec -it resourcemanager /bin/bash
+cd /opt/hadoop-2.7.4/share/hadoop/mapreduce/
+```
+
+#### 7. Set Up HDFS
+```sh
+hadoop fs -mkdir -p /input/task2
+hadoop fs -put ./task_1_output/ /input/task2
+```
+
+#### 8. Execute the MapReduce Job
+```sh
+hadoop jar sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar com.example.task_2.WordFrequencyDriver /input/task2/task_1_output /output_2
+```
+
+#### 9. View the Output
+```sh
+hadoop fs -cat /output_2/*
+```
+
+#### 10. Copy Output from HDFS to Local OS
+To copy the output from HDFS to your local machine:
+```sh
+# Copy from HDFS to container filesystem
+hdfs dfs -get /output_2 /opt/hadoop-2.7.4/share/hadoop/mapreduce/
+
+# Exit the container
+exit  
+
+# Copy from Docker container to local machine
+docker cp resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/output_2/ outputs/task_2_output
+
+
+
+# Task 3: Sentiment Scoring and Trend Analysis MapReduce Job
+
+## Objective
+The objective of Task 3 is to perform sentiment analysis on historical texts by leveraging word-based sentiment scoring. The output will be a dataset containing the sentiment score for each book, which can be used for further trend analysis.
+
+## Dataset Overview
+The input dataset is the output of Task 2, which contains each lemma along with its frequency, associated book ID, and year. This dataset is referred to as `output2` and serves as the input for Task 3.
+
+### Input File: `output2`
+Each line in `output2` follows the format:
+
+```plaintext
+book_id,year\tword_frequency
+```
+
+#### Example:
+```plaintext
+1080,1667\t112
+11,1832\t120
+1259,1802\t1986
+```
+
+## Implementation Notes
+- **Scope:** Implemented using Hadoop MapReduce (Java)
+- **Sentiment Scoring:** AFINN lexicon is used for word-based sentiment analysis
+- **Preprocessing:** The `AFINN-111.txt` lexicon is copied into the container using `docker cp` and used in the Mapper
+
+## Implementation Steps
+
+### 1. Copy the AFINN Lexicon to the Hadoop Container
+```sh
+docker-compose up -d
+docker cp AFINN-111.txt resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/AFINN-111.txt
+```
+
+### 2. Upload Input Data to HDFS
+```sh
+docker exec -it resourcemanager /bin/bash
+hadoop fs -mkdir -p /input/task3
+hadoop fs -put ./output2 /input/task3
+```
+
+### 3. Run the MapReduce Job
+
+#### Mapper: `SentimentMapper.java`
+- Reads each line from `output2`
+- Extracts `book_id`, `year`, and `word_frequency`
+- Looks up each word in `AFINN-111.txt` for sentiment score
+- Computes sentiment contribution per word
+- Emits: `<book_id,year sentiment_score>`
+
+#### Reducer: `SentimentReducer.java`
+- Aggregates sentiment scores per book
+- Emits: `<book_id, year, total_sentiment_score>`
+
+#### Driver: `SentimentDriver.java`
+- Sets up the MapReduce job and specifies input/output paths
+
+Run the MapReduce job with:
+```sh
+hadoop jar target/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar com.example.SentimentDriver /input/task3 /output_3
+```
+
+### 4. Retrieve the Output
+```sh
+hadoop fs -cat /output_3/*
+```
+
+## Final Output Format
+Each line in `/output_3` contains:
+
+```plaintext
+book_id,year\tsentiment_score
+```
+
+### Sample Example:
+```plaintext
+1080,1667\t112
+11,1832\t120
+1259,1802\t1986
+1260,1816\t1516
+1342,1775\t4045
+```
+
+## Challenges Encountered
+- Handling words not present in `AFINN-111.txt` required assigning a neutral score (0)
+- Some words had ambiguous sentiment scores, requiring careful lookup handling
+- Large-scale processing using Java MapReduce was efficient but required memory optimization for lexicon lookup
+
+## Insights
+- Combining word frequency with sentiment scoring allows historical trend analysis
+- Sentiment variations across different centuries can indicate cultural and linguistic shifts
+- Efficient file handling and format consistency ensure seamless integration with future tasks
+
+## Contributors
+- **Navya Vejalla**
+
+## How to Run (Quick Start)
+```bash
+# 1. Copy the AFINN lexicon to Hadoop container
+docker cp AFINN-111.txt resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/AFINN-111.txt
+
+# 2. Upload input files to HDFS
+hadoop fs -mkdir -p /input/task3
+hadoop fs -put ./output2 /input/task3
+
+# 3. Build and run MapReduce
+mvn clean package
+hadoop jar target/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar com.example.SentimentDriver /input/task3 /output_3
+
+# 4. Export and view results
+hadoop fs -cat /output_3/*
+```
 
 # task 4 step by step guide 
 
