@@ -330,7 +330,7 @@ exit
 
 # Copy from Docker container to local machine
 docker cp resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/output_2/ outputs/task_2_output
-
+```
 
 
 # Task 3: Sentiment Scoring and Trend Analysis MapReduce Job
