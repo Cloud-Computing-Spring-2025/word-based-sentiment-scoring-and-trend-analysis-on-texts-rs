@@ -274,3 +274,113 @@ docker cp resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/t4output/ out
 
 
 
+# Task 5: Bigram Analysis Using Hive UDF
+
+## Objective
+Extract and analyze bigrams from lemmatized text using a custom Hive UDF. The UDF takes an array of "lemma:freq" strings and returns a map of bigrams to their co-occurrence frequencies.
+
+## Implementation Steps
+
+### 1. Copy Output Files to Local Machine
+Copy the output files from the container to the local workspace:
+```sh
+docker cp target/sentiment-scoring-trend-analysis-0.0.1-SNAPSHOT.jar hive-server:/opt/jar_file/bigram-udf.jar
+```
+### 2.  Copy Hive Script  (on mac I had to individually query hive -- see below)
+Copy the output files from the container to the local workspace:
+```sh
+docker cp hive_scripts/task5_bigrams.hql hive-server:/opt/task5_bigrams.hql
+```
+
+### 3. Open the Hive Container
+Copy the output files from the container to the local workspace:
+```sh
+docker exec -it hive-server /bin/bash
+```
+
+### 4. Run Hive 
+Copy the output files from the container to the local workspace:
+```sh
+hive -f /opt/task5_bigrams.hql
+```
+
+### 1. Create an External Table for Lemmatized Data
+```sql
+DROP TABLE IF EXISTS lemma_freqs_raw;
+CREATE EXTERNAL TABLE lemma_freqs_raw (
+  raw_line STRING
+)
+LOCATION 'hdfs://namenode:8020/outputs/task_2_output';
+```
+
+
+
+### 2. Create a Parsed Table for Lemma Data
+```sql
+DROP TABLE IF EXISTS lemma_freqs;
+CREATE TABLE lemma_freqs AS
+SELECT
+  CAST(SPLIT(raw_line, ',')[0] AS INT) AS book_id,
+  SPLIT(raw_line, ',')[1] AS lemma,
+  CAST(SPLIT(SPLIT(raw_line, ',')[2], '\\t')[0] AS INT) AS year,
+  CAST(SPLIT(SPLIT(raw_line, ',')[2], '\\t')[1] AS INT) AS freq
+FROM lemma_freqs_raw;
+```
+
+### 3. Register the Bigram Hive UDF
+- Make sure the compiled JAR is located in /opt/jar_file/.
+```sql
+ADD JAR /opt/jar_file/bigram-udf.jar;
+CREATE TEMPORARY FUNCTION pseudo_bigrams AS 'com.example.task_5.BigramUDF';
+```
+### 4. Group Lemmas by Book and Year
+```sql
+DROP TABLE IF EXISTS lemma_grouped;
+CREATE TABLE lemma_grouped AS
+SELECT
+  book_id,
+  year,
+  COLLECT_LIST(CONCAT_WS(':', lemma, CAST(freq AS STRING))) AS lemma_freq_arr,
+  COUNT(*) AS cnt
+FROM lemma_freqs
+GROUP BY book_id, year;
+```
+### 5. Create an External Table for Lemmatized Data
+```sql
+DROP TABLE IF EXISTS lemma_grouped_filtered;
+CREATE TABLE lemma_grouped_filtered AS
+SELECT * FROM lemma_grouped WHERE cnt > 1;
+```
+
+### 6. Create an External Table for Lemmatized Data
+```sql
+DROP TABLE IF EXISTS bigram_output;
+CREATE TABLE bigram_output AS
+SELECT
+  lgf.book_id,
+  lgf.year,
+  ex.key AS bigram,
+  ex.value AS co_freq
+FROM lemma_grouped_filtered lgf
+LATERAL VIEW explode(pseudo_bigrams(lgf.lemma_freq_arr)) ex AS key, value;
+```
+
+
+### 7. Export Bigram Results
+```sql
+INSERT OVERWRITE DIRECTORY 'hdfs://namenode:8020/outputs/task5_output'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT book_id, year, bigram, co_freq
+FROM bigram_output;
+```
+
+### Output Example 
+
+```
+book_id | year | bigram           | co_freq
+--------|------|------------------|--------
+1342    | 1775 | pride prejudice  | 6
+1342    | 1775 | elizabeth darcy  | 9
+...
+```
